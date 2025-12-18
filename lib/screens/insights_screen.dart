@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import '../models/meal_entry.dart';
+import '../widgets/time_range_selector.dart';
 import 'reflection_screen.dart';
+import 'reflection_history_screen.dart';
 
-class InsightsScreen extends StatelessWidget {
+class InsightsScreen extends StatefulWidget {
   const InsightsScreen({super.key});
+
+  @override
+  State<InsightsScreen> createState() => _InsightsScreenState();
+}
+
+class _InsightsScreenState extends State<InsightsScreen> {
+  TimeRange _weightTimeRange = TimeRange.month;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +50,10 @@ class InsightsScreen extends StatelessWidget {
                 
                 // Måltidsmönster
                 _buildMealInsights(context, state),
+                const SizedBox(height: 20),
+
+                // Viktgraf
+                _buildWeightGraph(context, state),
                 const SizedBox(height: 20),
                 
                 // Reflektioner
@@ -510,7 +525,7 @@ class InsightsScreen extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: avgSatiety / 5,
+                        value: avgSatiety / 10,
                         backgroundColor: AppTheme.neutralGray.withValues(alpha: 0.2),
                         valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accentCool),
                         minHeight: 10,
@@ -519,7 +534,7 @@ class InsightsScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    '${avgSatiety.toStringAsFixed(1)}/5',
+                    '${avgSatiety.toStringAsFixed(1)}/10',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ],
@@ -555,6 +570,130 @@ class InsightsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildWeightGraph(BuildContext context, AppState state) {
+    final allWeightEntries = state.weightEntries;
+    
+    // Filtrera baserat på tidsintervall
+    final now = DateTime.now();
+    DateTime startDate;
+    
+    switch (_weightTimeRange) {
+      case TimeRange.week:
+        startDate = now.subtract(const Duration(days: 7));
+        break;
+      case TimeRange.month:
+        startDate = now.subtract(const Duration(days: 30));
+        break;
+      case TimeRange.threeMonths:
+        startDate = now.subtract(const Duration(days: 90));
+        break;
+      case TimeRange.sixMonths:
+        startDate = now.subtract(const Duration(days: 180));
+        break;
+      case TimeRange.year:
+        startDate = now.subtract(const Duration(days: 365));
+        break;
+    }
+
+    final weightEntries = allWeightEntries
+        .where((e) => e.date.isAfter(startDate) || e.date.isAtSameMomentAs(startDate))
+        .toList();
+
+    // Sortera efter datum
+    weightEntries.sort((a, b) => a.date.compareTo(b.date));
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text('⚖️', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 12),
+                Text(
+                  'Viktförändring',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Tidsintervall-väljare
+            TimeRangeSelector(
+              selectedRange: _weightTimeRange,
+              onRangeSelected: (range) => setState(() => _weightTimeRange = range),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            if (weightEntries.isEmpty)
+              Container(
+                height: 200,
+                alignment: Alignment.center,
+                child: Text(
+                  'Ingen viktdata för denna period',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              )
+            else
+              SizedBox(
+                height: 200,
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(show: false),
+                    titlesData: FlTitlesData(
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            final index = value.toInt();
+                            if (index >= 0 && index < weightEntries.length) {
+                              // Visa bara varannan datum om det är många
+                              if (weightEntries.length > 7 && index % (weightEntries.length ~/ 5 + 1) != 0) {
+                                return const SizedBox.shrink();
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  DateFormat('d/M').format(weightEntries[index].date),
+                                  style: const TextStyle(fontSize: 10),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                          interval: 1,
+                        ),
+                      ),
+                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: weightEntries.asMap().entries.map((e) {
+                          return FlSpot(e.key.toDouble(), e.value.weight);
+                        }).toList(),
+                        isCurved: true,
+                        color: AppTheme.primaryColor,
+                        barWidth: 3,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(show: true),
+                        belowBarData: BarAreaData(show: false),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildReflectionCard(BuildContext context, AppState state) {
     final reflections = state.reflections;
     final latestReflection = reflections.isNotEmpty ? reflections.first : null;
@@ -578,12 +717,23 @@ class InsightsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ReflectionScreen()),
-                  ),
-                  child: const Text('Skriv'),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ReflectionHistoryScreen()),
+                      ),
+                      child: const Text('Historik'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ReflectionScreen()),
+                      ),
+                      child: const Text('Skriv'),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -22,6 +22,10 @@ class SettingsScreen extends StatelessWidget {
             // Identitet
             _buildIdentitySection(context),
             const SizedBox(height: 24),
+
+            // Utseende
+            _buildAppearanceSection(context),
+            const SizedBox(height: 24),
             
             // Hantera vanor
             _buildHabitsSection(context),
@@ -88,6 +92,48 @@ class SettingsScreen extends StatelessWidget {
                   'Denna mening är stabil och ändras inte dagligen.',
                   style: Theme.of(context).textTheme.bodySmall,
                   textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAppearanceSection(BuildContext context) {
+    return Consumer<AppState>(
+      builder: (context, state, _) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text('🎨', style: TextStyle(fontSize: 20)),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Utseende',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<ThemeMode>(
+                    segments: const [
+                      ButtonSegment(value: ThemeMode.system, label: Text('System')),
+                      ButtonSegment(value: ThemeMode.light, label: Text('Ljust')),
+                      ButtonSegment(value: ThemeMode.dark, label: Text('Mörkt')),
+                    ],
+                    selected: {state.themeMode},
+                    onSelectionChanged: (Set<ThemeMode> newSelection) {
+                      state.setThemeMode(newSelection.first);
+                    },
+                  ),
                 ),
               ],
             ),
@@ -212,13 +258,22 @@ class SettingsScreen extends StatelessWidget {
       subtitle: habit.myVersion != null 
           ? Text(habit.myVersion!, style: Theme.of(context).textTheme.bodySmall)
           : null,
-      trailing: Switch(
-        value: habit.isActive,
-        onChanged: state.activeHabits.length >= 5 && !habit.isActive
-            ? null
-            : (_) => state.toggleHabitActive(habit.id),
-        activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.5),
-        activeThumbColor: AppTheme.primaryColor,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Switch(
+            value: habit.isActive,
+            onChanged: state.activeHabits.length >= 5 && !habit.isActive
+                ? null
+                : (_) => state.toggleHabitActive(habit.id),
+            activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.5),
+            activeThumbColor: AppTheme.primaryColor,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, size: 20),
+            onPressed: () => _confirmDelete(context, 'vana', () => state.deleteHabit(habit.id)),
+          ),
+        ],
       ),
     );
   }
@@ -228,13 +283,46 @@ class SettingsScreen extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: Text(type.icon, style: const TextStyle(fontSize: 24)),
       title: Text(type.title),
-      trailing: Switch(
-        value: type.isActive,
-        onChanged: state.activeWorkoutTypes.length >= 5 && !type.isActive
-            ? null
-            : (_) => state.toggleWorkoutTypeActive(type.id),
-        activeTrackColor: AppTheme.accentWarm.withValues(alpha: 0.5),
-        activeThumbColor: AppTheme.accentWarm,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Switch(
+            value: type.isActive,
+            onChanged: state.activeWorkoutTypes.length >= 5 && !type.isActive
+                ? null
+                : (_) => state.toggleWorkoutTypeActive(type.id),
+            activeTrackColor: AppTheme.accentWarm.withValues(alpha: 0.5),
+            activeThumbColor: AppTheme.accentWarm,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, size: 20),
+            onPressed: () => _confirmDelete(context, 'träningstyp', () => state.deleteWorkoutType(type.id)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, String itemType, VoidCallback onDelete) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Ta bort $itemType?'),
+        content: const Text('Vill du ta bort detta? Tidigare loggar påverkas inte.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Avbryt'),
+          ),
+          TextButton(
+            onPressed: () {
+              onDelete();
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Ta bort'),
+          ),
+        ],
       ),
     );
   }

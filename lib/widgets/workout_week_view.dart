@@ -1,20 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import '../models/habit.dart';
 
-class WorkoutWeekView extends StatelessWidget {
+class WorkoutWeekView extends StatefulWidget {
   const WorkoutWeekView({super.key});
+
+  @override
+  State<WorkoutWeekView> createState() => _WorkoutWeekViewState();
+}
+
+class _WorkoutWeekViewState extends State<WorkoutWeekView> {
+  DateTime _selectedDate = DateTime.now();
+
+  void _changeWeek(int offset) {
+    setState(() {
+      _selectedDate = _selectedDate.add(Duration(days: offset * 7));
+    });
+  }
+
+  int _getWeekNumber(DateTime date) {
+    int dayOfYear = int.parse(DateFormat("D").format(date));
+    return ((dayOfYear - date.weekday + 10) / 7).floor();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (context, state, _) {
-        final weekDays = _getWeekDays();
+        final weekDays = _getWeekDays(_selectedDate);
         final dayNames = ['M', 'T', 'O', 'T', 'F', 'L', 'S'];
         final activeTypes = state.activeWorkoutTypes;
+        final currentWeekNum = _getWeekNumber(DateTime.now());
+        final selectedWeekNum = _getWeekNumber(_selectedDate);
+        final isCurrentWeek = currentWeekNum == selectedWeekNum && _selectedDate.year == DateTime.now().year;
 
         if (activeTypes.isEmpty) {
           return Card(
@@ -49,9 +71,30 @@ class WorkoutWeekView extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Träning denna vecka',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: () => _changeWeek(-1),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isCurrentWeek ? 'Träning denna vecka' : 'Vecka $selectedWeekNum',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: isCurrentWeek ? null : () => _changeWeek(1),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          visualDensity: VisualDensity.compact,
+                          color: isCurrentWeek ? AppTheme.neutralGray : null,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -79,7 +122,7 @@ class WorkoutWeekView extends StatelessWidget {
                                 dayNames[entry.key],
                                 style: TextStyle(
                                   fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
-                                  color: isToday ? AppTheme.accentWarm : AppTheme.textSecondary,
+                                  color: isToday ? AppTheme.accentWarm : Theme.of(context).textTheme.bodySmall?.color,
                                   fontSize: 13,
                                 ),
                               ),
@@ -294,8 +337,8 @@ class WorkoutWeekView extends StatelessWidget {
     );
   }
 
-  List<DateTime> _getWeekDays() {
-    final now = DateTime.now();
+  List<DateTime> _getWeekDays(DateTime date) {
+    final now = date;
     final monday = now.subtract(Duration(days: now.weekday - 1));
     return List.generate(7, (i) => DateTime(
       monday.year,

@@ -326,7 +326,7 @@ class _MealEntryScreenState extends State<MealEntryScreen> {
                 decoration: BoxDecoration(
                   color: isSelected 
                       ? AppTheme.primaryColor 
-                      : AppTheme.surfaceColor,
+                      : Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected 
@@ -341,7 +341,7 @@ class _MealEntryScreenState extends State<MealEntryScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : AppTheme.textPrimary,
+                      color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                 ),
@@ -389,7 +389,7 @@ class _MealEntryScreenState extends State<MealEntryScreen> {
             decoration: BoxDecoration(
               color: isSelected 
                   ? AppTheme.primaryColor.withValues(alpha: 0.15)
-                  : AppTheme.surfaceColor,
+                  : Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected 
@@ -400,7 +400,7 @@ class _MealEntryScreenState extends State<MealEntryScreen> {
             child: Text(
               MealEntry.eatingReasonText(reason),
               style: TextStyle(
-                color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
+                color: isSelected ? AppTheme.primaryColor : Theme.of(context).textTheme.bodyMedium?.color,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -444,7 +444,7 @@ class _MealEntryScreenState extends State<MealEntryScreen> {
         decoration: BoxDecoration(
           color: isSelected 
               ? _getRatingColor(rating).withValues(alpha: 0.15)
-              : AppTheme.surfaceColor,
+              : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected 
@@ -461,7 +461,7 @@ class _MealEntryScreenState extends State<MealEntryScreen> {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isSelected ? _getRatingColor(rating) : AppTheme.textSecondary,
+                color: isSelected ? _getRatingColor(rating) : Theme.of(context).textTheme.bodySmall?.color,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),

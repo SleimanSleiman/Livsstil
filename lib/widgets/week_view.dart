@@ -1,18 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 
-class WeekView extends StatelessWidget {
+class WeekView extends StatefulWidget {
   const WeekView({super.key});
+
+  @override
+  State<WeekView> createState() => _WeekViewState();
+}
+
+class _WeekViewState extends State<WeekView> {
+  DateTime _selectedDate = DateTime.now();
+
+  void _changeWeek(int offset) {
+    setState(() {
+      _selectedDate = _selectedDate.add(Duration(days: offset * 7));
+    });
+  }
+
+  int _getWeekNumber(DateTime date) {
+    int dayOfYear = int.parse(DateFormat("D").format(date));
+    return ((dayOfYear - date.weekday + 10) / 7).floor();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (context, state, _) {
-        final weekDays = _getWeekDays();
+        final weekDays = _getWeekDays(_selectedDate);
         final dayNames = ['M', 'T', 'O', 'T', 'F', 'L', 'S'];
+        final currentWeekNum = _getWeekNumber(DateTime.now());
+        final selectedWeekNum = _getWeekNumber(_selectedDate);
+        final isCurrentWeek = currentWeekNum == selectedWeekNum && _selectedDate.year == DateTime.now().year;
 
         return Card(
           child: Padding(
@@ -23,9 +45,30 @@ class WeekView extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Denna vecka',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: () => _changeWeek(-1),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isCurrentWeek ? 'Denna vecka' : 'Vecka $selectedWeekNum',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: isCurrentWeek ? null : () => _changeWeek(1),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          visualDensity: VisualDensity.compact,
+                          color: isCurrentWeek ? AppTheme.neutralGray : null,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -53,7 +96,7 @@ class WeekView extends StatelessWidget {
                                 dayNames[entry.key],
                                 style: TextStyle(
                                   fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
-                                  color: isToday ? AppTheme.primaryColor : AppTheme.textSecondary,
+                                  color: isToday ? AppTheme.primaryColor : Theme.of(context).textTheme.bodySmall?.color,
                                   fontSize: 13,
                                 ),
                               ),
@@ -152,6 +195,23 @@ class WeekView extends StatelessWidget {
     );
   }
 
+  List<DateTime> _getWeekDays(DateTime date) {
+    final now = date;
+    final currentWeekDay = now.weekday;
+    final firstDayOfWeek = now.subtract(Duration(days: currentWeekDay - 1));
+    
+    return List.generate(7, (index) {
+      return firstDayOfWeek.add(Duration(days: index));
+    });
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && 
+           date.month == now.month && 
+           date.day == now.day;
+  }
+
   void _showTimeDialog(BuildContext context, AppState state, habit, DateTime date, int? currentMinutes) {
     int minutes = currentMinutes ?? 30;
     
@@ -218,22 +278,5 @@ class WeekView extends StatelessWidget {
         },
       ),
     );
-  }
-
-  List<DateTime> _getWeekDays() {
-    final now = DateTime.now();
-    final monday = now.subtract(Duration(days: now.weekday - 1));
-    return List.generate(7, (i) => DateTime(
-      monday.year,
-      monday.month,
-      monday.day + i,
-    ));
-  }
-
-  bool _isToday(DateTime date) {
-    final now = DateTime.now();
-    return date.year == now.year && 
-           date.month == now.month && 
-           date.day == now.day;
   }
 }

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../models/habit.dart';
 import '../providers/app_state.dart';
 import '../models/meal_entry.dart';
 import '../theme/app_theme.dart';
+import '../widgets/time_range_selector.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -15,6 +17,7 @@ class StatisticsScreen extends StatefulWidget {
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
   int _selectedTab = 0;
+  TimeRange _timeRange = TimeRange.week;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +42,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ],
             ),
           ),
+          
+          // Time Range Selector
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TimeRangeSelector(
+              selectedRange: _timeRange,
+              onRangeSelected: (range) => setState(() => _timeRange = range),
+            ),
+          ),
+          const SizedBox(height: 16),
           
           Expanded(
             child: SingleChildScrollView(
@@ -66,7 +79,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isSelected ? Colors.white : AppTheme.textSecondary,
+              color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
@@ -96,10 +109,33 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           return _buildEmptyState('Inga måltider loggade ännu');
         }
 
-        // Senaste 4 veckorna
+        // Filtrera baserat på tidsintervall
         final now = DateTime.now();
-        final fourWeeksAgo = now.subtract(const Duration(days: 28));
-        final recentMeals = meals.where((m) => m.timestamp.isAfter(fourWeeksAgo)).toList();
+        DateTime startDate;
+        
+        switch (_timeRange) {
+          case TimeRange.week:
+            startDate = now.subtract(const Duration(days: 7));
+            break;
+          case TimeRange.month:
+            startDate = now.subtract(const Duration(days: 30));
+            break;
+          case TimeRange.threeMonths:
+            startDate = now.subtract(const Duration(days: 90));
+            break;
+          case TimeRange.sixMonths:
+            startDate = now.subtract(const Duration(days: 180));
+            break;
+          case TimeRange.year:
+            startDate = now.subtract(const Duration(days: 365));
+            break;
+        }
+
+        final recentMeals = meals.where((m) => m.timestamp.isAfter(startDate)).toList();
+
+        if (recentMeals.isEmpty) {
+          return _buildEmptyState('Ingen data för vald period');
+        }
 
         // Gruppera per vecka
         final weeklyRatings = <int, Map<MealRating, int>>{};
@@ -388,9 +424,29 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           return _buildEmptyState('Inga aktiva vanor');
         }
 
-        // Senaste 4 veckorna
+        // Filtrera baserat på tidsintervall
         final now = DateTime.now();
-        final weeks = List.generate(4, (i) {
+        int weeksToShow;
+        
+        switch (_timeRange) {
+          case TimeRange.week:
+            weeksToShow = 1;
+            break;
+          case TimeRange.month:
+            weeksToShow = 4;
+            break;
+          case TimeRange.threeMonths:
+            weeksToShow = 12;
+            break;
+          case TimeRange.sixMonths:
+            weeksToShow = 26;
+            break;
+          case TimeRange.year:
+            weeksToShow = 52;
+            break;
+        }
+
+        final weeks = List.generate(weeksToShow, (i) {
           final weekStart = now.subtract(Duration(days: now.weekday - 1 + (i * 7)));
           return weekStart;
         }).reversed.toList();
@@ -429,6 +485,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 if (value.toInt() < weeks.length) {
+                  // Visa bara varannan vecka om det är många
+                  if (weeks.length > 8 && value.toInt() % (weeks.length ~/ 6 + 1) != 0) {
+                    return const SizedBox.shrink();
+                  }
                   return Text(
                     'V${_getWeekNumber(weeks[value.toInt()])}',
                     style: const TextStyle(fontSize: 12),
@@ -506,7 +566,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.neutralGray.withValues(alpha: 0.2)),
       ),
@@ -550,9 +610,41 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           return _buildEmptyState('Ingen träning loggad ännu');
         }
 
-        // Senaste 4 veckorna
+        // Filtrera baserat på tidsintervall
         final now = DateTime.now();
-        final weeks = List.generate(4, (i) {
+        int weeksToShow;
+        DateTime startDate;
+        
+        switch (_timeRange) {
+          case TimeRange.week:
+            weeksToShow = 1;
+            startDate = now.subtract(const Duration(days: 7));
+            break;
+          case TimeRange.month:
+            weeksToShow = 4;
+            startDate = now.subtract(const Duration(days: 30));
+            break;
+          case TimeRange.threeMonths:
+            weeksToShow = 12;
+            startDate = now.subtract(const Duration(days: 90));
+            break;
+          case TimeRange.sixMonths:
+            weeksToShow = 26;
+            startDate = now.subtract(const Duration(days: 180));
+            break;
+          case TimeRange.year:
+            weeksToShow = 52;
+            startDate = now.subtract(const Duration(days: 365));
+            break;
+        }
+
+        final recentWorkouts = workouts.where((w) => w.date.isAfter(startDate)).toList();
+
+        if (recentWorkouts.isEmpty) {
+          return _buildEmptyState('Ingen träning för vald period');
+        }
+
+        final weeks = List.generate(weeksToShow, (i) {
           final weekStart = now.subtract(Duration(days: now.weekday - 1 + (i * 7)));
           return weekStart;
         }).reversed.toList();
@@ -570,10 +662,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             
             _buildSectionTitle('Träningstyper'),
             const SizedBox(height: 16),
-            _buildWorkoutTypesPie(workouts),
+            _buildWorkoutTypesPie(recentWorkouts, state),
             const SizedBox(height: 32),
             
-            _buildWorkoutSummary(workouts),
+            _buildWorkoutSummary(recentWorkouts),
           ],
         );
       },
@@ -591,6 +683,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 if (value.toInt() < weeks.length) {
+                  // Visa bara varannan vecka om det är många
+                  if (weeks.length > 8 && value.toInt() % (weeks.length ~/ 6 + 1) != 0) {
+                    return const SizedBox.shrink();
+                  }
                   return Text(
                     'V${_getWeekNumber(weeks[value.toInt()])}',
                     style: const TextStyle(fontSize: 12),
@@ -649,10 +745,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Widget _buildWorkoutTypesPie(List workouts) {
+  Widget _buildWorkoutTypesPie(List<WorkoutEntry> workouts, AppState state) {
     final typeCount = <String, int>{};
     for (var w in workouts) {
-      typeCount.update(w.type, (c) => c + 1, ifAbsent: () => 1);
+      final typeName = state.workoutTypes
+          .firstWhere((t) => t.id == w.workoutTypeId,
+              orElse: () => WorkoutType(id: 'unknown', icon: '?', title: 'Okänd'))
+          .title;
+      typeCount.update(typeName, (c) => c + 1, ifAbsent: () => 1);
     }
 
     final colors = [

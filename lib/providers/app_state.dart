@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/habit.dart';
 import '../models/meal_entry.dart';
@@ -52,9 +52,30 @@ class AppState extends ChangeNotifier {
   int get currentStreak => _currentStreak;
   int get bestStreak => _bestStreak;
 
+  // Tema
+  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode get themeMode => _themeMode;
+
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    notifyListeners();
+    _saveThemeMode();
+  }
+
+  Future<void> _saveThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('themeMode', _themeMode.index);
+  }
+
   // Initialisering
   Future<void> loadData() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Ladda tema
+    final themeIndex = prefs.getInt('themeMode');
+    if (themeIndex != null) {
+      _themeMode = ThemeMode.values[themeIndex];
+    }
 
     // Ladda identitet
     _identityStatement = prefs.getString('identity') ?? _identityStatement;
@@ -175,6 +196,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void deleteWorkoutType(String typeId) {
+    _workoutTypes.removeWhere((t) => t.id == typeId);
+    _saveData();
+    notifyListeners();
+  }
+
   WorkoutType? getWorkoutTypeById(String id) {
     try {
       return _workoutTypes.firstWhere((t) => t.id == id);
@@ -212,6 +239,12 @@ class AppState extends ChangeNotifier {
 
   void addHabit(Habit habit) {
     _habits.add(habit);
+    _saveData();
+    notifyListeners();
+  }
+
+  void deleteHabit(String habitId) {
+    _habits.removeWhere((h) => h.id == habitId);
     _saveData();
     notifyListeners();
   }

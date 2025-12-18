@@ -151,7 +151,7 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: AppTheme.backgroundColor,
+                fillColor: Theme.of(context).inputDecorationTheme.fillColor,
               ),
             ),
           ],

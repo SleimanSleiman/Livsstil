@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
@@ -7,11 +6,6 @@ import '../widgets/identity_card.dart';
 import '../widgets/week_view.dart';
 import '../widgets/workout_week_view.dart';
 import '../widgets/quick_actions.dart';
-import 'meal_entry_screen.dart';
-import 'meals_list_screen.dart';
-import 'insights_screen.dart';
-import 'settings_screen.dart';
-import 'statistics_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -51,7 +45,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(context),
     );
   }
 
@@ -145,115 +138,5 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(
-                context,
-                icon: Icons.home_rounded,
-                label: 'Hem',
-                isSelected: true,
-                onTap: () {},
-              ),
-              _buildNavItem(
-                context,
-                icon: Icons.restaurant_rounded,
-                label: 'Måltider',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MealsListScreen()),
-                ),
-                onLongPress: () {
-                  HapticFeedback.mediumImpact();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MealEntryScreen()),
-                  );
-                },
-              ),
-              _buildNavItem(
-                context,
-                icon: Icons.bar_chart_rounded,
-                label: 'Statistik',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const StatisticsScreen()),
-                ),
-              ),
-              _buildNavItem(
-                context,
-                icon: Icons.lightbulb_outline_rounded,
-                label: 'Insikter',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const InsightsScreen()),
-                ),
-              ),
-              _buildNavItem(
-                context,
-                icon: Icons.settings_rounded,
-                label: 'Mer',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    bool isSelected = false,
-    required VoidCallback onTap,
-    VoidCallback? onLongPress,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppTheme.primaryColor : AppTheme.neutralGray,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: isSelected ? AppTheme.primaryColor : AppTheme.neutralGray,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
+

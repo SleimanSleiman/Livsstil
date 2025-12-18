@@ -241,7 +241,7 @@ class _MealsListScreenState extends State<MealsListScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.neutralGray.withValues(alpha: 0.2)),
         ),
