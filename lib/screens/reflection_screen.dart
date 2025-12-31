@@ -22,6 +22,13 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
     _loadExistingReflection();
   }
 
+  @override
+  void didUpdateWidget(covariant ReflectionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload controllers when widget is updated to avoid stale text
+    _loadExistingReflection();
+  }
+
   void _loadExistingReflection() {
     final state = context.read<AppState>();
     final reflection = state.getReflectionForWeek(DateTime.now());
@@ -101,14 +108,11 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Stanna upp en stund',
+          'Reflektion',
           style: Theme.of(context).textTheme.headlineMedium,
         ),
         const SizedBox(height: 8),
-        Text(
-          'Inga krav, bara reflektion. Svara på det du vill.',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        const SizedBox.shrink(),
       ],
     );
   }
@@ -161,27 +165,7 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
   }
 
   Widget _buildInfoText() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          const Text('📝', style: TextStyle(fontSize: 20)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Detta är inget dagbokskrav. Skriv när det känns rätt.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.primaryColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   void _saveReflection() {

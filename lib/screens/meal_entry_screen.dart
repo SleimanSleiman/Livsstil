@@ -18,14 +18,18 @@ class MealEntryScreen extends StatefulWidget {
 class _MealEntryScreenState extends State<MealEntryScreen> {
   final _nameController = TextEditingController();
   int? _hungerBefore;
+  final _reflectionController = TextEditingController();
   EatingReason? _eatingReason;
   MealRating _rating = MealRating.none;
   String? _imagePath;
   final ImagePicker _picker = ImagePicker();
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
 
   @override
   void dispose() {
     _nameController.dispose();
+    _reflectionController.dispose();
     super.dispose();
   }
 
@@ -44,6 +48,10 @@ class _MealEntryScreenState extends State<MealEntryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Datum och tid
+            _buildDateTimeSection(),
+            const SizedBox(height: 24),
+
             // Namn på måltiden
             _buildNameSection(),
             const SizedBox(height: 24),
@@ -58,8 +66,39 @@ class _MealEntryScreenState extends State<MealEntryScreen> {
 
             // Betyg
             _buildRatingSection(),
-            const SizedBox(height: 32),
-            
+            const SizedBox(height: 24),
+
+            // Måltidsreflektion (alltid tillgänglig)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('📝', style: TextStyle(fontSize: 20)),
+                        const SizedBox(width: 12),
+                        Text('Måltidsreflektion (valfritt)', style: Theme.of(context).textTheme.titleMedium),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _reflectionController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: 'Skriv en kort reflektion om måltiden...',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
             // Spara-knapp
             _buildSaveButton(),
             
@@ -71,6 +110,96 @@ class _MealEntryScreenState extends State<MealEntryScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildDateTimeSection() {
+    final isToday = _isToday(_selectedDate);
+    final weekdays = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
+    final dateText = isToday 
+        ? 'Idag' 
+        : '${weekdays[_selectedDate.weekday - 1]} ${_selectedDate.day}/${_selectedDate.month}';
+    final timeText = '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'När åt du?',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: _pickDate,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTheme.neutralGray.withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 20, color: AppTheme.primaryColor),
+                      const SizedBox(width: 12),
+                      Text(dateText, style: Theme.of(context).textTheme.bodyLarge),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: _pickTime,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTheme.neutralGray.withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.access_time, size: 20, color: AppTheme.primaryColor),
+                      const SizedBox(width: 12),
+                      Text(timeText, style: Theme.of(context).textTheme.bodyLarge),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (picked != null) {
+      setState(() => _selectedTime = picked);
+    }
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
   }
 
   Widget _buildNameSection() {
@@ -495,31 +624,50 @@ class _MealEntryScreenState extends State<MealEntryScreen> {
   }
 
   void _saveMeal() {
+    final mealDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
     final entry = MealEntry(
-      timestamp: DateTime.now(),
+      timestamp: mealDateTime,
       name: _nameController.text.isEmpty ? null : _nameController.text,
       imagePath: _imagePath,
       hungerBefore: _hungerBefore,
       eatingReason: _eatingReason,
       rating: _rating,
+      reflection: _reflectionController.text.isEmpty ? null : _reflectionController.text,
     );
 
     context.read<AppState>().addMealEntry(entry);
     
-    // Schemalägga påminnelse om mättnad efter 25 minuter
-    NotificationService().scheduleSatietyReminder(
-      mealId: entry.id,
-      mealName: _nameController.text,
-      delayMinutes: 25,
-    );
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Måltid sparad - påminnelse om mättnad om 25 min'),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 3),
-      ),
-    );
+    // Schemalägga påminnelse om mättnad efter 25 minuter (endast om det är idag)
+    if (_isToday(_selectedDate)) {
+      NotificationService().scheduleSatietyReminder(
+        mealId: entry.id,
+        mealName: _nameController.text,
+        delayMinutes: 25,
+      );
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Måltid sparad - påminnelse om mättnad om 25 min'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Måltid sparad'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
     
     Navigator.pop(context);
   }

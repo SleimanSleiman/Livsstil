@@ -14,6 +14,7 @@ class MealEntry {
   final EatingReason? eatingReason;
   final MealRating rating;
   final String? note;
+  final String? reflection;  // Måltidsreflektion
 
   MealEntry({
     String? id,
@@ -25,6 +26,7 @@ class MealEntry {
     this.eatingReason,
     this.rating = MealRating.none,
     this.note,
+    this.reflection,
   }) : id = id ?? const Uuid().v4();
 
   String get dateKey => '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')}';
@@ -37,6 +39,7 @@ class MealEntry {
     EatingReason? eatingReason,
     MealRating? rating,
     String? note,
+    String? reflection,
   }) {
     return MealEntry(
       id: id,
@@ -48,6 +51,7 @@ class MealEntry {
       eatingReason: eatingReason ?? this.eatingReason,
       rating: rating ?? this.rating,
       note: note ?? this.note,
+      reflection: reflection ?? this.reflection,
     );
   }
 
@@ -61,6 +65,7 @@ class MealEntry {
     'eatingReason': eatingReason?.index,
     'rating': rating.index,
     'note': note,
+    'reflection': reflection,
   };
 
   factory MealEntry.fromJson(Map<String, dynamic> json) => MealEntry(
@@ -75,6 +80,7 @@ class MealEntry {
         : null,
     rating: MealRating.values[json['rating'] ?? 0],
     note: json['note'],
+    reflection: json['reflection'],
   );
 
   // Hjälptext för hungerskala

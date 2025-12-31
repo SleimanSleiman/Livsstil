@@ -4,10 +4,13 @@ import 'providers/app_state.dart';
 import 'screens/main_screen.dart';
 import 'theme/app_theme.dart';
 import 'services/notification_service.dart';
+  import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService().initialize();
+  // Initialize locale data for Intl (used for Swedish date formatting)
+  await initializeDateFormatting('sv');
   runApp(const LivsstilApp());
 }
 

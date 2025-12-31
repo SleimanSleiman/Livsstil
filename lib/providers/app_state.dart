@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/habit.dart';
 import '../models/meal_entry.dart';
 import '../models/reflection.dart';
+import '../models/daily_reflection.dart';
 import '../models/weight_entry.dart';
 import '../models/milestone.dart';
 
@@ -37,6 +38,10 @@ class AppState extends ChangeNotifier {
   // Reflektioner
   List<Reflection> _reflections = [];
   List<Reflection> get reflections => _reflections;
+
+  // Dagliga reflektioner
+  List<DailyReflection> _dailyReflections = [];
+  List<DailyReflection> get dailyReflections => _dailyReflections;
 
   // Vikt (valfritt)
   List<WeightEntry> _weightEntries = [];
@@ -126,6 +131,13 @@ class AppState extends ChangeNotifier {
       _reflections = reflectionsList.map((r) => Reflection.fromJson(r)).toList();
     }
 
+    // Ladda dagliga reflektioner
+    final dailyReflectionsJson = prefs.getString('dailyReflections');
+    if (dailyReflectionsJson != null) {
+      final List<dynamic> dailyList = jsonDecode(dailyReflectionsJson);
+      _dailyReflections = dailyList.map((r) => DailyReflection.fromJson(r)).toList();
+    }
+
     // Ladda vikt
     final weightJson = prefs.getString('weightEntries');
     if (weightJson != null) {
@@ -160,6 +172,7 @@ class AppState extends ChangeNotifier {
     await prefs.setString('mealEntries', jsonEncode(_mealEntries.map((m) => m.toJson()).toList()));
     await prefs.setString('workoutEntries', jsonEncode(_workoutEntries.map((w) => w.toJson()).toList()));
     await prefs.setString('reflections', jsonEncode(_reflections.map((r) => r.toJson()).toList()));
+    await prefs.setString('dailyReflections', jsonEncode(_dailyReflections.map((r) => r.toJson()).toList()));
     await prefs.setString('weightEntries', jsonEncode(_weightEntries.map((w) => w.toJson()).toList()));
     await prefs.setString('milestones', jsonEncode(_milestones.map((m) => m.toJson()).toList()));
     await prefs.setInt('currentStreak', _currentStreak);
@@ -400,6 +413,15 @@ class AppState extends ChangeNotifier {
     } else {
       _reflections.add(reflection);
     }
+
+    // Deduplicate by weekKey and keep newest first
+    final map = <String, Reflection>{};
+    for (final r in _reflections) {
+      map[r.weekKey] = r;
+    }
+    _reflections = map.values.toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+
     _saveData();
     notifyListeners();
   }
@@ -410,6 +432,54 @@ class AppState extends ChangeNotifier {
       (r) => r.weekKey == reflection.weekKey,
       orElse: () => reflection,
     );
+  }
+
+  // Dagliga reflektioner
+  void saveDailyReflection(DailyReflection reflection) {
+    final existingIndex = _dailyReflections.indexWhere((r) => r.dateKey == reflection.dateKey);
+    if (existingIndex != -1) {
+      _dailyReflections[existingIndex] = reflection;
+    } else {
+      _dailyReflections.add(reflection);
+    }
+
+    // Deduplicate by dateKey and sort newest-first
+    final map = <String, DailyReflection>{};
+    for (final r in _dailyReflections) {
+      map[r.dateKey] = r;
+    }
+    _dailyReflections = map.values.toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    _saveData();
+    notifyListeners();
+  }
+
+  DailyReflection? getDailyReflectionForDate(DateTime date) {
+    final dateKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    try {
+      return _dailyReflections.firstWhere((r) => r.dateKey == dateKey);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Omordna vanor
+  void reorderHabits(int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) newIndex--;
+    final habit = _habits.removeAt(oldIndex);
+    _habits.insert(newIndex, habit);
+    _saveData();
+    notifyListeners();
+  }
+
+  // Omordna träningstyper
+  void reorderWorkoutTypes(int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) newIndex--;
+    final type = _workoutTypes.removeAt(oldIndex);
+    _workoutTypes.insert(newIndex, type);
+    _saveData();
+    notifyListeners();
   }
 
   // Vikt

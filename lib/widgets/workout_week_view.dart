@@ -143,9 +143,25 @@ class _WorkoutWeekViewState extends State<WorkoutWeekView> {
                       children: [
                         SizedBox(
                           width: 48,
-                          child: Text(
-                            workoutType.icon,
-                            style: const TextStyle(fontSize: 22),
+                          child: Tooltip(
+                            message: workoutType.title,
+                            preferBelow: true,
+                            triggerMode: TooltipTriggerMode.longPress,
+                            child: GestureDetector(
+                              onLongPress: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('${workoutType.icon} ${workoutType.title}'),
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                workoutType.icon,
+                                style: const TextStyle(fontSize: 22),
+                              ),
+                            ),
                           ),
                         ),
                         ...weekDays.map((date) {

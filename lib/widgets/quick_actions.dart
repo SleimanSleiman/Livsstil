@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../screens/meal_entry_screen.dart';
 import '../screens/reflection_screen.dart';
+import '../screens/daily_reflection_screen.dart';
 
 class QuickActions extends StatelessWidget {
   const QuickActions({super.key});
@@ -34,16 +35,30 @@ class QuickActions extends StatelessWidget {
             Expanded(
               child: _buildActionCard(
                 context,
-                icon: '📝',
-                title: 'Reflektera',
-                subtitle: 'Veckans tankar',
+                icon: '💭',
+                title: 'Dagens tankar',
+                subtitle: 'Daglig reflektion',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ReflectionScreen()),
+                  MaterialPageRoute(builder: (_) => const DailyReflectionScreen()),
                 ),
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: _buildActionCard(
+            context,
+            icon: '📝',
+            title: 'Veckoreflexion',
+            subtitle: 'Summera veckans tankar',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ReflectionScreen()),
+            ),
+          ),
         ),
       ],
     );

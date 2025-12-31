@@ -5,8 +5,14 @@ import '../models/habit.dart';
 import '../models/weight_entry.dart';
 import '../theme/app_theme.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
@@ -19,9 +25,7 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Identitet
-            _buildIdentitySection(context),
-            const SizedBox(height: 24),
+       
 
             // Utseende
             _buildAppearanceSection(context),
@@ -43,63 +47,14 @@ class SettingsScreen extends StatelessWidget {
             _buildStreakSection(context),
             const SizedBox(height: 24),
             
-            // App info
-            _buildAppInfo(context),
+          
           ],
         ),
       ),
     );
   }
 
-  Widget _buildIdentitySection(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, state, _) {
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text('🌟', style: TextStyle(fontSize: 20)),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Min identitet',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    state.identityStatement,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontStyle: FontStyle.italic,
-                      color: AppTheme.primaryColor,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Denna mening är stabil och ändras inte dagligen.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  
 
   Widget _buildAppearanceSection(BuildContext context) {
     return Consumer<AppState>(
@@ -171,9 +126,28 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'Dra för att ändra ordning',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 
-                ...state.habits.map((habit) => _buildHabitItem(context, habit, state)),
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: state.habits.length,
+                  onReorder: (oldIndex, newIndex) {
+                    state.reorderHabits(oldIndex, newIndex);
+                  },
+                  itemBuilder: (context, index) {
+                    final habit = state.habits[index];
+                    return _buildHabitItem(context, habit, state, key: ValueKey(habit.id));
+                  },
+                ),
                 
                 const SizedBox(height: 12),
                 
@@ -224,12 +198,26 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Välj vilka träningstyper som visas på hemskärmen.',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  'Dra för att ändra ordning',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 
-                ...state.workoutTypes.map((type) => _buildWorkoutTypeItem(context, type, state)),
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: state.workoutTypes.length,
+                  onReorder: (oldIndex, newIndex) {
+                    state.reorderWorkoutTypes(oldIndex, newIndex);
+                  },
+                  itemBuilder: (context, index) {
+                    final type = state.workoutTypes[index];
+                    return _buildWorkoutTypeItem(context, type, state, key: ValueKey(type.id));
+                  },
+                ),
                 
                 const SizedBox(height: 12),
                 
@@ -250,55 +238,77 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHabitItem(BuildContext context, Habit habit, AppState state) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Text(habit.icon, style: const TextStyle(fontSize: 24)),
-      title: Text(habit.title),
-      subtitle: habit.myVersion != null 
-          ? Text(habit.myVersion!, style: Theme.of(context).textTheme.bodySmall)
-          : null,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Switch(
-            value: habit.isActive,
-            onChanged: state.activeHabits.length >= 5 && !habit.isActive
-                ? null
-                : (_) => state.toggleHabitActive(habit.id),
-            activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.5),
-            activeThumbColor: AppTheme.primaryColor,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 20),
-            onPressed: () => _confirmDelete(context, 'vana', () => state.deleteHabit(habit.id)),
-          ),
-        ],
+  Widget _buildHabitItem(BuildContext context, Habit habit, AppState state, {Key? key}) {
+    return Material(
+      key: key,
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.drag_handle, color: AppTheme.neutralGray),
+            const SizedBox(width: 8),
+            Text(habit.icon, style: const TextStyle(fontSize: 24)),
+          ],
+        ),
+        title: Text(habit.title),
+        subtitle: habit.myVersion != null 
+            ? Text(habit.myVersion!, style: Theme.of(context).textTheme.bodySmall)
+            : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Switch(
+              value: habit.isActive,
+              onChanged: state.activeHabits.length >= 5 && !habit.isActive
+                  ? null
+                  : (_) => state.toggleHabitActive(habit.id),
+              activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.5),
+              activeThumbColor: AppTheme.primaryColor,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              onPressed: () => _confirmDelete(context, 'vana', () => state.deleteHabit(habit.id)),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildWorkoutTypeItem(BuildContext context, WorkoutType type, AppState state) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Text(type.icon, style: const TextStyle(fontSize: 24)),
-      title: Text(type.title),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Switch(
-            value: type.isActive,
-            onChanged: state.activeWorkoutTypes.length >= 5 && !type.isActive
-                ? null
-                : (_) => state.toggleWorkoutTypeActive(type.id),
-            activeTrackColor: AppTheme.accentWarm.withValues(alpha: 0.5),
-            activeThumbColor: AppTheme.accentWarm,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 20),
-            onPressed: () => _confirmDelete(context, 'träningstyp', () => state.deleteWorkoutType(type.id)),
-          ),
-        ],
+  Widget _buildWorkoutTypeItem(BuildContext context, WorkoutType type, AppState state, {Key? key}) {
+    return Material(
+      key: key,
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.drag_handle, color: AppTheme.neutralGray),
+            const SizedBox(width: 8),
+            Text(type.icon, style: const TextStyle(fontSize: 24)),
+          ],
+        ),
+        title: Text(type.title),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Switch(
+              value: type.isActive,
+              onChanged: state.activeWorkoutTypes.length >= 5 && !type.isActive
+                  ? null
+                  : (_) => state.toggleWorkoutTypeActive(type.id),
+              activeTrackColor: AppTheme.accentWarm.withValues(alpha: 0.5),
+              activeThumbColor: AppTheme.accentWarm,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              onPressed: () => _confirmDelete(context, 'träningstyp', () => state.deleteWorkoutType(type.id)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -675,53 +685,5 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAppInfo(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Om Livsstil',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Denna app hjälper dig agera som en hälsosam person genom små, konsekventa val. Fokus ligger på identitet och beteenden, inte kalorier, vikt eller perfektion.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  const Text('🌿', style: TextStyle(fontSize: 24)),
-                  const SizedBox(height: 8),
-                  Text(
-                    '"Tillräckligt är bra"',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppTheme.primaryColor,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Version 1.0.0',
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 }

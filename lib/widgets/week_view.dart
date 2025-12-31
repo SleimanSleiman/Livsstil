@@ -117,9 +117,25 @@ class _WeekViewState extends State<WeekView> {
                       children: [
                         SizedBox(
                           width: 48,
-                          child: Text(
-                            habit.icon,
-                            style: const TextStyle(fontSize: 22),
+                          child: Tooltip(
+                            message: habit.title,
+                            preferBelow: true,
+                            triggerMode: TooltipTriggerMode.longPress,
+                            child: GestureDetector(
+                              onLongPress: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('${habit.icon} ${habit.title}'),
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                habit.icon,
+                                style: const TextStyle(fontSize: 22),
+                              ),
+                            ),
                           ),
                         ),
                         ...weekDays.map((date) {

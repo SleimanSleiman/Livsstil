@@ -60,8 +60,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 _buildReflectionCard(context, state),
                 const SizedBox(height: 20),
                 
-                // Motiverande budskap
-                _buildMotivation(context),
+                // Motiverande budskap (removed)
+                const SizedBox.shrink(),
               ],
             ),
           );
@@ -815,47 +815,5 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
-  Widget _buildMotivation(BuildContext context) {
-    final messages = [
-      ('Små val, stor skillnad', '🌱'),
-      ('Du bygger något hållbart', '🏗️'),
-      ('Tillräckligt är bra', '✨'),
-      ('Fokusera på nästa val', '👣'),
-      ('Varje dag är en ny möjlighet', '🌅'),
-      ('Framsteg, inte perfektion', '📈'),
-    ];
-    
-    final index = DateTime.now().day % messages.length;
-    final message = messages[index];
-    
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.accentWarm.withValues(alpha: 0.15),
-            AppTheme.accentWarm.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          Text(message.$2, style: const TextStyle(fontSize: 32)),
-          const SizedBox(height: 12),
-          Text(
-            message.$1,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppTheme.accentWarm,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
+  
 }

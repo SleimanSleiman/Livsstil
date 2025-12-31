@@ -18,6 +18,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
   int? _satietyAfter;
   MealRating _rating = MealRating.none;
   bool _isEditing = false;
+  final _reflectionController = TextEditingController();
+  bool _isEditingReflection = false;
 
   @override
   void initState() {
@@ -31,8 +33,15 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       setState(() {
         _satietyAfter = meal.satietyAfter;
         _rating = meal.rating;
+        _reflectionController.text = meal.reflection ?? '';
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _reflectionController.dispose();
+    super.dispose();
   }
 
   @override
@@ -96,6 +105,10 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
 
                 // Betyg - redigerbar
                 _buildRatingSection(context, meal),
+                const SizedBox(height: 20),
+
+                // Måltidsreflektion - alltid tillgänglig
+                _buildReflectionSection(context, meal),
                 const SizedBox(height: 20),
 
                 // Anledning
@@ -398,6 +411,84 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildReflectionSection(BuildContext context, MealEntry meal) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Text('📝', style: TextStyle(fontSize: 20)),
+                    const SizedBox(width: 12),
+                    Text('Måltidsreflektion', style: Theme.of(context).textTheme.titleMedium),
+                  ],
+                ),
+                if (meal.reflection != null && meal.reflection!.isNotEmpty && !_isEditingReflection)
+                  TextButton(
+                    onPressed: () => setState(() => _isEditingReflection = true),
+                    child: const Text('Ändra'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            
+            if (meal.reflection != null && meal.reflection!.isNotEmpty && !_isEditingReflection)
+              Text(meal.reflection!, style: Theme.of(context).textTheme.bodyLarge)
+            else ...[
+              Text(
+                'Hur upplevde du måltiden? Vad kan du ta med dig?',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _reflectionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'T.ex. "Åt långsamt och kände mig nöjd efteråt..."',
+                  hintStyle: TextStyle(
+                    color: AppTheme.textSecondary.withValues(alpha: 0.6),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _reflectionController.text.isNotEmpty
+                      ? () => _saveReflection(meal)
+                      : null,
+                  child: const Text('Spara reflektion'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _saveReflection(MealEntry meal) {
+    final updatedMeal = meal.copyWith(reflection: _reflectionController.text);
+    context.read<AppState>().updateMealEntry(updatedMeal);
+    setState(() => _isEditingReflection = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Reflektion sparad'), behavior: SnackBarBehavior.floating),
     );
   }
 

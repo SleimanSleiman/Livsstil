@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
-import '../widgets/identity_card.dart';
+// identity card moved; import removed to avoid unused import
 import '../widgets/week_view.dart';
 import '../widgets/workout_week_view.dart';
 import '../widgets/quick_actions.dart';
@@ -22,10 +22,7 @@ class HomeScreen extends StatelessWidget {
               // Header med streak
               _buildHeader(context),
               const SizedBox(height: 24),
-              
-              // Identitetskort
-              const IdentityCard(),
-              const SizedBox(height: 24),
+        
               
               // Veckovy - appens kärna
               const WeekView(),
@@ -39,8 +36,7 @@ class HomeScreen extends StatelessWidget {
               const QuickActions(),
               const SizedBox(height: 24),
               
-              // Motiverande text
-              _buildMotivationalText(context),
+              
             ],
           ),
         ),
@@ -103,40 +99,7 @@ class HomeScreen extends StatelessWidget {
     return 'God kväll';
   }
 
-  Widget _buildMotivationalText(BuildContext context) {
-    final messages = [
-      'Små val räknas',
-      'Du bygger något hållbart',
-      'Tillräckligt är bra',
-      'Fokus på nästa val',
-      'Varje steg spelar roll',
-    ];
-    
-    final index = DateTime.now().day % messages.length;
-    
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          const Text('✨', style: TextStyle(fontSize: 24)),
-          const SizedBox(height: 8),
-          Text(
-            messages[index],
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppTheme.primaryColor,
-              fontStyle: FontStyle.italic,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
 
 }
+
 
